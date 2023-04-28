@@ -37,8 +37,8 @@ let anytime contract = Anytime contract;;
 
 (** Example composed contracts *)
 (** Zero-coupon discount bond *)
-let zcb t x c = scale (konst x) (get (truncate t (one c)))
+let zcb t x c = scale (konst x) (get (truncate t (one c)));;
 
 (** European Option *)
-let euro t u = get (truncate t (u orc zero))
+let euro t u = get (truncate t (orc u zero));;
 
