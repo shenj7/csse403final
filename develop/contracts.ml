@@ -87,7 +87,7 @@ let rec parse_contract_string string_list =
     match string_list with
     | "zcb" :: _ :: x :: c :: [] ->  if ((parse_numbers (string_to_clist x)) && ((string_to_currency c) != None)) then true else false
     | "euro" :: _ :: rest -> if (parse_contract_string rest) then true else false
-    | [] -> true
+    | [] -> false
     | _ -> false;;
 
 (** Parser to parse command of string*)
