@@ -54,8 +54,8 @@ let string_to_clist s =
 let clist_to_str cl = String.concat "" (List.map (String.make 1) cl)
 
 (** Split*)
-let split s = 
-    s |> String.split_on_char ' ' |> List.filter (fun s -> s <> "");;
+let split s c = 
+    s |> String.split_on_char c |> List.filter (fun s -> s <> "");;
 
 (** String to Currency*)
 let string_to_currency str =
@@ -82,6 +82,51 @@ let rec parse_numbers char_list =
     | [] -> true
     | _ -> false;;
 
+let t = Unix.localtime (Unix.time ());;
+let (cday, cmonth, cyear) = (t.tm_mday, t.tm_mon + 1, t.tm_year + 1900) ;;
+(* Printf.printf "The current date is %04d-%02d-%02d\n"
+  (1900 + year) (month + 1) day ;; *)
+
+(** Check year is valid*)
+let parse_year year = if parse_numbers (string_to_clist year)
+    then 
+        if ((int_of_string year) >= cyear) then true else false
+    else 
+        false;;
+
+(** Check if month and day is valid*)
+let parse_month_day month day =
+    if parse_numbers (string_to_clist month) && parse_numbers (string_to_clist day)
+        then
+            match month with
+            | "01" -> true
+            | "02" -> true
+            | "03" -> true
+            | "04" -> true
+            | "05" -> true
+            | "06" -> true
+            | "07" -> true
+            | "08" -> true
+            | "09" -> true
+            | "10" -> true
+            | "11" -> true
+            | "12" -> true
+            | _ -> false
+        else
+            false;;
+
+
+(** Make sure date is of the form xxxx-xx-xx (year-month-day)*)
+let rec parse_date date =
+    let date_list = (split date '-') in
+    if (List.length date_list) != 3 then false
+    else
+        if (parse_year (List.nth date_list 0))
+            then
+                parse_month_day (List.nth date_list 1) (List.nth date_list 2) 
+            else
+                false;;
+
 (** Parser to parse contract of string*)
 let rec parse_contract_string string_list =
     match string_list with
@@ -92,7 +137,7 @@ let rec parse_contract_string string_list =
 
 (** Parser to parse command of string*)
 let rec parse_command_string str =
-    let str_list = (split str) in
+    let str_list = (split str ' ') in
     match str_list with
     | "LC" :: [] -> true
     | "OC" :: rest -> (parse_contract_string rest)
