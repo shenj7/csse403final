@@ -92,23 +92,13 @@ let parse_numbers char_list =
 (* let t = Unix.localtime (Unix.time ());;
 let (cday, cmonth, cyear) = (t.tm_mday, t.tm_mon + 1, t.tm_year + 1900) ;; *)
 
-(** Check year is valid*)
-let parse_year year = 
-    let t = Unix.localtime (Unix.time ()) in
-    let cyear = t.tm_year + 1900 in
-    if parse_numbers (string_to_clist year)
-    then 
-        if ((int_of_string year) >= cyear) then true else false
-    else 
-        false;;
-
-(** Check if month and day is valid*)
-let parse_month_day month day islyear =
-    if parse_numbers (string_to_clist month) && parse_numbers (string_to_clist day)
+(** Check if year, month, and day is valid*)
+let parse_year_month_day year month day islyear =
+    if parse_numbers (string_to_clist month) && parse_numbers (string_to_clist day) && parse_numbers (string_to_clist year)
         then
             let t = Unix.localtime (Unix.time ()) in
-            let (cmonth, cday, month, day) = t.tm_mon + 1, t.tm_mday, int_of_string month, int_of_string day in
-            if month >= cmonth && day >= cday
+            let (cyear, cmonth, cday, year, month, day) = t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, int_of_string year, int_of_string month, int_of_string day in
+            if (year >= cyear || month >= cmonth || day >= cday) && (year > 0 && month > 0 && day > 0)
                 then
                     match month with
                     | 1 -> if day <= 31 then true else false
@@ -138,12 +128,8 @@ let rec parse_date date =
     let date_list = (split date '-') in
     if (List.length date_list) != 3 then false
     else
-        if (parse_year (List.nth date_list 0))
-            then
-                let islyear = ((int_of_string (List.nth date_list 0)) mod 4) == 0 in
-                parse_month_day (List.nth date_list 1) (List.nth date_list 2) islyear
-            else
-                false;;
+        let islyear = ((int_of_string (List.nth date_list 0)) mod 4) == 0 in
+        parse_year_month_day (List.nth date_list 0) (List.nth date_list 1) (List.nth date_list 2) islyear;;
 
 (** Parser to parse contract of string*)
 let rec parse_contract_string string_list =
@@ -164,14 +150,14 @@ let rec parse_command_string str =
     | [] -> false
     | _ -> false;;
 
-(* Printf.printf "%b\n" (parse_command_string "LC");;
+Printf.printf "%b\n" (parse_command_string "LC");;
 Printf.printf "%b\n" (parse_command_string "OC zcb date 80 USD");;
 Printf.printf "%b\n" (parse_command_string "BC 12344");;
 Printf.printf "%b\n" (parse_command_string "OC euro 2024-09-16 euro 2024-10-30 zcb 2025-01-31 80 USD");;
 Printf.printf "%b\n" (parse_command_string "OC zcb 2022-10-30 80.00 USD");;
 Printf.printf "%b\n" (parse_command_string "OC zcb 2024-09-16 80.00 USD");;
 Printf.printf "%b\n" (parse_command_string "OC zcb 2024-09-16 80.00. USD");;
-Printf.printf "%b\n" (parse_command_string "OC zcb 2024-09-16 .08 USD");; *)
+Printf.printf "%b\n" (parse_command_string "OC zcb 2025-01-00 .08 USD");;
 
 (* let rec main = *)
 let main_loop = ref false in
