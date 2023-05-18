@@ -66,13 +66,6 @@ let string_to_currency str =
     | "SGD" -> Some SGD
     | _ -> None
 
-(** Count '.' in list clist*)
-let rec check_str_float clist =
-    match clist with
-    |[] -> 0
-    |'.' :: rest -> 1 + check_str_float rest
-    |_ :: rest -> check_str_float rest;;
-
 (** Parser to check list is numbers*)
 let rec parse_numbers_helper char_list count = 
     if count < 2 then
