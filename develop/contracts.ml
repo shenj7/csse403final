@@ -66,29 +66,44 @@ let string_to_currency str =
     | "SGD" -> Some SGD
     | _ -> None
 
-(** Parser to check list is numbers*)
-let rec parse_numbers char_list =
-    match char_list with
-    | '1' :: rest -> parse_numbers rest
-    | '2' :: rest -> parse_numbers rest
-    | '3' :: rest -> parse_numbers rest
-    | '4' :: rest -> parse_numbers rest
-    | '5' :: rest -> parse_numbers rest
-    | '6' :: rest -> parse_numbers rest
-    | '7' :: rest -> parse_numbers rest
-    | '8' :: rest -> parse_numbers rest
-    | '9' :: rest -> parse_numbers rest
-    | '0' :: rest -> parse_numbers rest
-    | [] -> true
-    | _ -> false;;
+(** Count '.' in list clist*)
+let rec check_str_float clist =
+    match clist with
+    |[] -> 0
+    |'.' :: rest -> 1 + check_str_float rest
+    |_ :: rest -> check_str_float rest;;
 
-let t = Unix.localtime (Unix.time ());;
-let (cday, cmonth, cyear) = (t.tm_mday, t.tm_mon + 1, t.tm_year + 1900) ;;
-(* Printf.printf "The current date is %04d-%02d-%02d\n"
-  (1900 + year) (month + 1) day ;; *)
+(** Parser to check list is numbers*)
+let rec parse_numbers_helper char_list count = 
+    if count < 2 then
+        match char_list with
+        | '1' :: rest -> parse_numbers_helper rest count
+        | '2' :: rest -> parse_numbers_helper rest count
+        | '3' :: rest -> parse_numbers_helper rest count
+        | '4' :: rest -> parse_numbers_helper rest count
+        | '5' :: rest -> parse_numbers_helper rest count
+        | '6' :: rest -> parse_numbers_helper rest count
+        | '7' :: rest -> parse_numbers_helper rest count
+        | '8' :: rest -> parse_numbers_helper rest count
+        | '9' :: rest -> parse_numbers_helper rest count
+        | '0' :: rest -> parse_numbers_helper rest count
+        | '.' :: rest -> parse_numbers_helper rest (count+1)
+        | [] -> true
+        | _ -> false
+    else
+        false;;
+
+let parse_numbers char_list =
+    parse_numbers_helper char_list 0;;
+
+(* let t = Unix.localtime (Unix.time ());;
+let (cday, cmonth, cyear) = (t.tm_mday, t.tm_mon + 1, t.tm_year + 1900) ;; *)
 
 (** Check year is valid*)
-let parse_year year = if parse_numbers (string_to_clist year)
+let parse_year year = 
+    let t = Unix.localtime (Unix.time ()) in
+    let cyear = t.tm_year + 1900 in
+    if parse_numbers (string_to_clist year)
     then 
         if ((int_of_string year) >= cyear) then true else false
     else 
@@ -159,7 +174,10 @@ let rec parse_command_string str =
 Printf.printf "%b\n" (parse_command_string "OC zcb date 80 USD");;
 Printf.printf "%b\n" (parse_command_string "BC 12344");;
 Printf.printf "%b\n" (parse_command_string "OC euro 2024-09-16 euro 2024-10-30 zcb 2025-01-31 80 USD");;
-Printf.printf "%b\n" (parse_command_string "OC zcb 2022-10-30 80 USD");; *)
+Printf.printf "%b\n" (parse_command_string "OC zcb 2022-10-30 80.00 USD");;
+Printf.printf "%b\n" (parse_command_string "OC zcb 2024-09-16 80.00 USD");;
+Printf.printf "%b\n" (parse_command_string "OC zcb 2024-09-16 80.00. USD");;
+Printf.printf "%b\n" (parse_command_string "OC zcb 2024-09-16 .08 USD");; *)
 
 (* let rec main = *)
 let main_loop = ref false in
