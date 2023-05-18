@@ -106,26 +106,27 @@ let parse_year year =
 let parse_month_day month day islyear =
     if parse_numbers (string_to_clist month) && parse_numbers (string_to_clist day)
         then
-            let day = int_of_string day in
-            if day >= 1
+            let t = Unix.localtime (Unix.time ()) in
+            let (cmonth, cday, month, day) = t.tm_mon + 1, t.tm_mday, int_of_string month, int_of_string day in
+            if month >= cmonth && day >= cday
                 then
                     match month with
-                    | "01" -> if day <= 31 then true else false
-                    | "02" -> if islyear
+                    | 1 -> if day <= 31 then true else false
+                    | 2 -> if islyear
                                 then
                                     if day <= 29 then true else false
                                 else 
                                     if day <= 28 then true else false   
-                    | "03" -> if day <= 31 then true else false
-                    | "04" -> if day <= 30 then true else false
-                    | "05" -> if day <= 31 then true else false
-                    | "06" -> if day <= 30 then true else false
-                    | "07" -> if day <= 31 then true else false
-                    | "08" -> if day <= 31 then true else false
-                    | "09" -> if day <= 30 then true else false
-                    | "10" -> if day <= 31 then true else false
-                    | "11" -> if day <= 30 then true else false
-                    | "12" -> if day <= 31 then true else false
+                    | 3 -> if day <= 31 then true else false
+                    | 4 -> if day <= 30 then true else false
+                    | 5 -> if day <= 31 then true else false
+                    | 6 -> if day <= 30 then true else false
+                    | 7 -> if day <= 31 then true else false
+                    | 8 -> if day <= 31 then true else false
+                    | 9 -> if day <= 30 then true else false
+                    | 10 -> if day <= 31 then true else false
+                    | 11 -> if day <= 30 then true else false
+                    | 12 -> if day <= 31 then true else false
                     | _ -> false
                 else
                     false
