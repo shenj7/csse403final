@@ -53,10 +53,28 @@ let string_to_currency str =
     | "SGD" -> Some SGD
     | _ -> None
 
-let currency_option_to_currency cur =
-    match cur with
-    | Some x -> x
-    | None -> USD;;
+(** Currency Conversion*)
+
+let currency_relative_value curr =
+    match curr with
+    | USD -> 1.0
+    | GBP -> 0.8004913
+    | JPY -> 137.1725
+    | SGD -> 1.3421987
+
+let rec convert_contract_currency con newCurr =
+    match con with
+    | Zero -> Zero
+    | One curr -> Scale ((konst ((currency_relative_value newCurr) /. (currency_relative_value curr))), One newCurr)
+    | Give cont -> Give (convert_contract_currency cont newCurr)
+    | And (cont1, cont2) -> And ((convert_contract_currency cont1 newCurr), (convert_contract_currency cont2 newCurr))
+    | Or (cont1, cont2) -> Or ((convert_contract_currency cont1 newCurr), (convert_contract_currency cont2 newCurr))
+    | Truncate (date, cont) -> Truncate (date, (convert_contract_currency cont newCurr))
+    | Then (cont1, cont2) -> Then ((convert_contract_currency cont1 newCurr), (convert_contract_currency cont2 newCurr))
+    | Scale (fo, cont) -> Scale (fo, (convert_contract_currency cont newCurr))
+    | Get cont -> Get (convert_contract_currency cont newCurr)
+    | Anytime cont -> Anytime (convert_contract_currency cont newCurr)
+
 
 (** Parser to check list is numbers*)
 let rec parse_numbers_helper char_list count = 
@@ -120,7 +138,7 @@ let rec parse_date date =
     let date_list = (split date '-') in
     if (List.length date_list) != 3 then false
     else
-        let islyear = ((int_of_string (List.nth date_list 0)) mod 4) == 0 in
+        let islyear = (((int_of_string (List.nth date_list 0)) mod 400) == 0) || ((((int_of_string (List.nth date_list 0)) mod 4) == 0) && (((int_of_string (List.nth date_list 0)) mod 100) != 0))  in
         parse_year_month_day (List.nth date_list 0) (List.nth date_list 1) (List.nth date_list 2) islyear;;
 
 (** Parser to parse contract of string*)
