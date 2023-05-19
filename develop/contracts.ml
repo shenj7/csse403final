@@ -151,7 +151,7 @@ let rec parse_date date =
     let date_list = (split date '-') in
     if (List.length date_list) != 3 then false
     else
-        let islyear = ((int_of_string (List.nth date_list 0)) mod 4) == 0 in
+        let islyear = (((int_of_string (List.nth date_list 0)) mod 400) == 0) || ((((int_of_string (List.nth date_list 0)) mod 4) == 0) && (((int_of_string (List.nth date_list 0)) mod 100) != 0))  in
         parse_year_month_day (List.nth date_list 0) (List.nth date_list 1) (List.nth date_list 2) islyear;;
 
 (** Parser to parse contract of string*)
