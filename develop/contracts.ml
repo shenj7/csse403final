@@ -16,32 +16,19 @@ type contract = Zero
     | Give of contract
     | And of contract * contract
     | Or of contract * contract
-    | Truncate of date * contract
+    | Truncate of string * contract
     | Then of contract * contract
     | Scale of float observable * contract
     | Get of contract
     | Anytime of contract;;
 
-(** Contract primitive constructors *)
-let zero = Zero;;
-let one currency = One currency;;
-let give contract = Give contract;;
-let andc first second = And (first, second);;
-let orc first second = Or (first, second);;
-let truncate date contract = Truncate (date, contract);;
-let thenc first second = Then (first, second);;
-let scale amount contract = Scale (amount, contract);;
-let get contract = Get contract;;
-let anytime contract = Anytime contract;;
-
-
 (** Example composed contracts *)
 
 (** Zero-coupon discount bond *)
-let zcb t x c = scale (konst x) (get (truncate t (one c)));;
+let zcb t x c = Scale (Obs x, Get (Truncate (t, One c)))
 
 (** European Option *)
-let euro t u = get (truncate t (orc u zero));;
+let euro t u = Get (Truncate (t, Or (u, Zero)));;
 
 (** String to char list*)
 let string_to_clist s =
@@ -155,33 +142,77 @@ let rec parse_date date =
         parse_year_month_day (List.nth date_list 0) (List.nth date_list 1) (List.nth date_list 2) islyear;;
 
 (** Parser to parse contract of string*)
-let rec parse_contract_string string_list =
+let rec check_composed string_list =
     match string_list with
     | "zcb" :: d :: x :: c :: [] ->  if (parse_date d) && (parse_numbers (string_to_clist x)) && ((string_to_currency c) != None) then true else false
-    | "euro" :: d :: rest -> if (parse_date d) && (parse_contract_string rest) then true else false
+    | "euro" :: d :: rest -> if (parse_date d) && (check_composed rest) then true else false
     | [] -> false
     | _ -> false;;
 
 (** Parser to parse command of string*)
 let rec parse_command_string str =
     let str_list = (split str ' ') in
+    check_composed str_list;;
+
+
+let rec get_args sps counter current_args =
+    if counter = 0
+        then
+            match sps with
+            | "," :: rest -> (current_args :: (get_args rest 0 []))
+            | "(" :: rest -> get_args rest (counter+1) (List.append current_args ["("])
+            | ")" :: [] -> [current_args]
+            | _ as arg :: rest -> get_args rest counter (List.append current_args [arg])
+            | [] -> []
+        else match sps with 
+            | "(" :: rest -> get_args rest (counter+1) (List.append current_args ["("])
+            | ")" :: rest -> get_args rest (counter-1) (List.append current_args [")"])
+            | _ as arg :: rest -> get_args rest counter (List.append current_args [arg])
+            | [] -> [];;
+            
+
+let rec join = function
+  | [] -> ""
+  | ""::tail -> join tail
+  | hd::tail -> hd ^ join tail;;
+let ll_to_string ll = 
+    join (List.map join ll);;
+
+Printf.printf "%s\n" (ll_to_string (get_args (split "Give ( One ( USD ) ) , Give ( One ( JPY ) ) )" ' ') 0 []));;
+Printf.printf "%s\n" (join (List.hd (get_args (split "Give ( One ( USD ) ) , Give ( One ( JPY ) ) )" ' ') 0 [])));;
+(** ( Give ( Give One ) )*)
+
+let rec parse_list str_list = 
     match str_list with
-    | "LC" :: [] -> true
-    | "OC" :: rest -> (parse_contract_string rest)
-    | "BC" :: rest :: [] -> (parse_numbers (string_to_clist rest))
-    | "EC" ::  rest :: [] -> (parse_numbers (string_to_clist rest))
-    | [] -> false
-    | _ -> false;;
+    | "Zero" :: [] -> Zero
+    | "One" :: "(" :: u :: ")" :: [] -> One (currency_option_to_currency (string_to_currency u))
+    | "Give" :: "(" :: rest -> Give (parse_list (List.hd (get_args rest 0 [])))
+    | "And" :: "(" :: rest -> let c1c2 = (get_args rest 0 []) in And ((parse_list (List.hd c1c2)), (parse_list (List.hd (List.tl c1c2))))
+    | "Or" :: "(" :: rest -> let c1c2 = (get_args rest 0 []) in Or ((parse_list (List.hd c1c2)), (parse_list (List.hd (List.tl c1c2))))
+    | "Truncate" :: "(" :: rest -> let c1c2 = (get_args rest 0 []) in Truncate ((List.hd (List.hd c1c2)), (parse_list (List.hd (List.tl c1c2))))
+    | "Then" :: "(" :: rest -> let c1c2 = (get_args rest 0 []) in Then ((parse_list (List.hd c1c2)), (parse_list (List.hd (List.tl c1c2))))
+    | "Scale" :: "(" :: rest -> let c1c2 = (get_args rest 0 []) in Scale (Obs (Float.of_string (List.hd (List.hd c1c2))), (parse_list (List.hd (List.tl c1c2))))
+    | "Get" :: "(" :: rest -> Get (parse_list (List.hd (get_args rest 0 [])))
+    | "Anytime" :: "(" :: rest -> Anytime (parse_list (List.hd (get_args rest 0 [])))
+    | _ -> Zero ;;
+    (* | "And" :: rest -> let c1c2 = (get_args rest) in And (parse_list (first c1c2), (parse_list (List.c))) *)
 
-Printf.printf "%b\n" (parse_command_string "LC");;
-Printf.printf "%b\n" (parse_command_string "OC zcb date 80 USD");;
-Printf.printf "%b\n" (parse_command_string "BC 12344");;
-Printf.printf "%b\n" (parse_command_string "OC euro 2024-09-16 euro 2024-10-30 zcb 2025-01-31 80 USD");;
-Printf.printf "%b\n" (parse_command_string "OC zcb 2022-10-30 80.00 USD");;
-Printf.printf "%b\n" (parse_command_string "OC zcb 2024-09-16 80.00 USD");;
-Printf.printf "%b\n" (parse_command_string "OC zcb 2024-09-16 80.00. USD");;
-Printf.printf "%b\n" (parse_command_string "OC zcb 2025-01-00 .08 USD");;
+let rec parse string =
+    let str_list = (split string ' ') in
+        (parse_list str_list);;
 
+(* ;; *)
+Printf.printf "%b\n" (parse_command_string "zcb date 80 USD");;
+Printf.printf "%b\n" (parse_command_string "euro 2024-09-16 euro 2024-10-30 zcb 2025-01-31 80 USD");;
+Printf.printf "%b\n" (parse_command_string "zcb 2022-10-30 80.00 USD");;
+Printf.printf "%b\n" (parse_command_string "zcb 2024-09-16 80.00 USD");;
+Printf.printf "%b\n" (parse_command_string "zcb 2024-09-16 80.00. USD");;
+Printf.printf "%b\n" (parse_command_string "zcb 2025-01-00 .08 USD");;
+
+Printf.printf "%b\n" ((parse "And ( Give ( One ( USD ) ) , Give ( One ( JPY ) ) )") = And (Give (One USD), Give (One JPY)));;
+Printf.printf "%b\n" ((parse "Truncate ( 2023-04-03 , Give ( One ( USD ) ) )") = Truncate ("2023-04-03", Give (One USD)));;
+Printf.printf "%b\n" ((parse "Scale ( 80.00 , Give ( One ( USD ) ) )") = Scale ((Obs 80.00), Give (One USD)));;
+Printf.printf "%b\n" ((parse "Truncate ( 2023-04-03 , And ( Give ( One ( USD ) ) , Give ( One ( JPY ) ) ) )") = Truncate ("2023-04-03", And (Give (One USD), Give (One JPY))));;
 (* let rec main = *)
 let main_loop = ref false in
     while not !main_loop do
