@@ -1,4 +1,0 @@
-(executable
- (public_name csse403final)
- (name contracts)
- (libraries csse403final))
