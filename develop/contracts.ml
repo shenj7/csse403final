@@ -194,7 +194,7 @@ let rec parse_list str_list =
     | "Give" :: "(" :: rest -> Give (parse_list (List.hd (get_args rest 0 [])))
     | "And" :: "(" :: rest -> let c1c2 = (get_args rest 0 []) in And ((parse_list (List.hd c1c2)), (parse_list (List.hd (List.tl c1c2))))
     | "Or" :: "(" :: rest -> let c1c2 = (get_args rest 0 []) in Or ((parse_list (List.hd c1c2)), (parse_list (List.hd (List.tl c1c2))))
-    | "Truncate" :: "(" :: rest -> let c1c2 = (get_args rest 0 []) in Truncate ((if (parse_date (List.hd (List.hd c1c2))) then (List.hd (List.hd c1c2)) else let t = Unix.localtime (Unix.time ()) in (string_of_int (t.tm_year + 1901)) ^ (string_of_int (t.tm_mon + 1)) ^ (string_of_int (t.tm_mday))), (parse_list (List.hd (List.tl c1c2))))
+    | "Truncate" :: "(" :: rest -> let c1c2 = (get_args rest 0 []) in Truncate ((if (parse_date (List.hd (List.hd c1c2))) then (List.hd (List.hd c1c2)) else let t = Unix.localtime (Unix.time ()) in (string_of_int (t.tm_year + 1901)) ^ "-" ^ (string_of_int (t.tm_mon + 1)) ^ "-" ^ (string_of_int (t.tm_mday))), (parse_list (List.hd (List.tl c1c2))))
     | "Then" :: "(" :: rest -> let c1c2 = (get_args rest 0 []) in Then ((parse_list (List.hd c1c2)), (parse_list (List.hd (List.tl c1c2))))
     | "Scale" :: "(" :: rest -> let c1c2 = (get_args rest 0 []) in Scale (Obs (Float.of_string (List.hd (List.hd c1c2))), (parse_list (List.hd (List.tl c1c2))))
     | "Get" :: "(" :: rest -> Get (parse_list (List.hd (get_args rest 0 [])))
